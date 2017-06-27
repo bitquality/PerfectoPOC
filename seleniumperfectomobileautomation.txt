@@ -1,0 +1,140 @@
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.Platform;
+import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
+
+import com.perfectomobile.selenium.MobileDriver;
+import com.perfectomobile.selenium.MobileProxy;
+import com.perfectomobile.selenium.api.IMobileDevice;
+import com.perfectomobile.selenium.options.MobileDeviceFindOptions;
+import com.perfectomobile.selenium.options.MobileDeviceOS;
+
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.remote.AutomationName;
+import io.appium.java_client.remote.MobileCapabilityType;
+
+public class TestPerfectoMobileConn {
+	
+	private static final String HTTPS = "https://";
+	private static final String HTTP = "http://";
+	private static final String MEDIA_REPOSITORY = "/services/repositories/media/";
+	private static final String UPLOAD_OPERATION = "operation=upload&overwrite=true";
+	private static final String UTF_8 = "UTF-8";
+
+	public static void main(String[] args) throws IOException {
+		
+		
+		String host = "phost.perfectomobile.com";
+		String browserName = "mobileOS";
+		String userName = "phost@outlook.com";
+		String password = "p123456";
+		
+        DesiredCapabilities capabilities = new DesiredCapabilities(browserName, "" , Platform.ANDROID);
+
+      //Upload APK file from my folder to repository
+    	String repositoryKeyAndroid = "selendroid-test-app-0.17.0.apk";
+    	String repositoryKey = "PRIVATE:apps/selendroid-test-app-0.17.0.apk";
+    	File file = new File("C:\\Users\\bitqulity\\Desktop\\Work\\MobileAutomation\\ApkFiles\\selendroid-test-app-0.17.0.apk");
+    	
+    	
+
+    	
+        capabilities.setCapability("user", userName);
+        capabilities.setCapability("password", password);
+        capabilities.setCapability("autoLaunch",true); 
+       
+        capabilities.setCapability("deviceName","SBZH44SWM01234");//htc:SH44SWM012456,  //samsun s4: "7DERA9");
+        capabilities.setCapability("automationName", AutomationName.APPIUM);
+        
+        capabilities.setCapability("appPackage","io.selendroid.testapp" ); //io.selendroid.testapp is the package name for selendroid-test-app-0.17.0.apk
+       
+       
+        capabilities.setCapability("nativeEvents", true);
+           
+		
+		PerfectoLabUtils.setExecutionIdCapability(capabilities, host);
+		
+		AndroidDriver ad = new AndroidDriver(new URL("http://" + host + "/nexperience/perfectomobile/wd/hub"), capabilities);
+		By userId = By.id("android:id/title");
+		ad.findElement(userId).sendKeys("someone@outlook.com");
+       
+//		byte[] content = readFile(file);
+//		if (content != null) {
+//			String encodedUser = URLEncoder.encode(userName, "UTF-8");
+//			String encodedPassword = URLEncoder.encode(password, "UTF-8");
+//			String urlStr = HTTPS + host + MEDIA_REPOSITORY + repositoryKey + "?" + UPLOAD_OPERATION + "&user=" + encodedUser + "&password=" + encodedPassword;
+//			URL url = new URL(urlStr);
+//		    sendRequest(content, url);
+//		}
+		
+		System.out.println("Script ended");
+	}
+	
+
+	private static void sendRequest(byte[] content, URL url) throws IOException {
+		HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+		connection.setDoOutput(true);
+		connection.setRequestProperty("Content-Type", "application/octet-stream");
+		connection.connect();
+		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+		outStream.write(content);
+		outStream.writeTo(connection.getOutputStream());
+		outStream.close();
+		int code = connection.getResponseCode();
+		if (code > HttpURLConnection.HTTP_OK) {
+			handleError(connection);
+		}
+	}
+	
+	private static void handleError(HttpURLConnection connection) throws IOException {
+		String msg = "Failed to upload media.";
+		InputStream errorStream = connection.getErrorStream();
+		if (errorStream != null) {
+			InputStreamReader inputStreamReader = new InputStreamReader(errorStream, UTF_8);
+			BufferedReader bufferReader = new BufferedReader(inputStreamReader);
+			try {
+				StringBuilder builder = new StringBuilder();
+				String outputString;
+				while ((outputString = bufferReader.readLine()) != null) {
+					if (builder.length() != 0) {
+						builder.append("\n");
+					}
+					builder.append(outputString);
+				}
+				String response = builder.toString();
+				msg += "Response: " + response;
+			}
+			finally {
+				bufferReader.close();
+			}
+		}
+		throw new RuntimeException(msg);
+	}
+	
+	private static byte[] readFile(File path) throws FileNotFoundException, IOException {
+		int length = (int)path.length();
+		byte[] content = new byte[length];
+		InputStream inStream = new FileInputStream(path);
+		try {
+			inStream.read(content);
+		}
+		finally {
+			inStream.close();
+		}
+		return content;
+	}
+	
+
+}
